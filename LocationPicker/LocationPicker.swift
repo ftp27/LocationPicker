@@ -132,6 +132,8 @@ open class LocationPicker: UIViewController, UIGestureRecognizerDelegate {
      */
     open var deleteCompletion: ((LocationItem) -> Void)?
     
+    open var dismissCompletion: (() -> Void)?
+    
     /**
      Handler closure executed when user try to fetch current location without location access.
      
@@ -655,14 +657,13 @@ open class LocationPicker: UIViewController, UIGestureRecognizerDelegate {
     // MARK: Buttons
     
     @objc func doneButtonDidTap(barButtonItem: UIBarButtonItem) {
-        if let locationItem = selectedLocationItem {
-            dismiss(animated: true, completion: nil)
-            locationDidPick(locationItem: locationItem)
-        }
+        guard let locationItem = selectedLocationItem else { return }
+        dismissCompletion?()
+        locationDidPick(locationItem: locationItem)
     }
     
     @objc func cancelButtonDidTap(barButtonItem: UIBarButtonItem) {
-        dismiss(animated: true, completion: nil)
+        dismissCompletion?()
     }
     
     
