@@ -133,6 +133,7 @@ open class LocationPicker: UIViewController, UIGestureRecognizerDelegate {
     open var deleteCompletion: ((LocationItem) -> Void)?
     
     open var dismissCompletion: (() -> Void)?
+    open var locationDetectClosure: ((@escaping ((CLLocation) -> Void)) -> Void)?
     
     /**
      Handler closure executed when user try to fetch current location without location access.
@@ -1003,19 +1004,25 @@ extension LocationPicker: UITableViewDelegate, UITableViewDataSource {
         longitudinalDistance = defaultLongitudinalDistance
         
         if indexPath.row == 0 {
-            switch CLLocationManager.authorizationStatus() {
-            case .notDetermined:
-                locationManager.requestWhenInUseAuthorization()
-            case .denied:
-                locationDidDeny(locationPicker: self)
-                tableView.deselectRow(at: indexPath, animated: true)
+            if let completion = locationDetectClosure {
+                completion { [weak self] location in
+                    self?.reverseGeocodeLocation(location)
+                }
+            } else {
+                switch CLLocationManager.authorizationStatus() {
+                case .notDetermined:
+                    locationManager.requestWhenInUseAuthorization()
+                case .denied:
+                    locationDidDeny(locationPicker: self)
+                    tableView.deselectRow(at: indexPath, animated: true)
+                    
+                default:
+                    break
+                }
                 
-            default:
-                break
-            }
-            
-            if let currentLocation = locationManager.location {
-                reverseGeocodeLocation(currentLocation)
+                if let currentLocation = locationManager.location {
+                    reverseGeocodeLocation(currentLocation)
+                }
             }
         } else {
             let cell = tableView.cellForRow(at: indexPath) as! LocationCell
